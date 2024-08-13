@@ -6,17 +6,35 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const Forecasting = ({ data, onForecastComplete }) => {
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [forecastDays, setForecastDays] = useState(30);
   const [growthRate, setGrowthRate] = useState(0);
   const [seasonality, setSeasonality] = useState('none');
   const [smoothing, setSmoothing] = useState(0.5);
 
-  const runForecast = useMemo(() => {
-    if (!data || data.length === 0) return [];
+  useEffect(() => {
+    if (data && data.length > 0) {
+      setStartDate(new Date(data[0].date));
+      setEndDate(new Date(data[data.length - 1].date));
+    }
+  }, [data]);
 
-    const historicalCPAs = data.map(item => item.CPA).filter(cpa => cpa !== null && !isNaN(cpa));
+  const filteredData = useMemo(() => {
+    if (!data || !startDate || !endDate) return [];
+    return data.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= startDate && itemDate <= endDate;
+    });
+  }, [data, startDate, endDate]);
+
+  const runForecast = useMemo(() => {
+    if (!filteredData || filteredData.length === 0) return [];
+
+    const historicalCPAs = filteredData.map(item => item.CPA).filter(cpa => cpa !== null && !isNaN(cpa));
     const avgCPA = historicalCPAs.reduce((sum, cpa) => sum + cpa, 0) / historicalCPAs.length;
     const lastCPA = historicalCPAs[historicalCPAs.length - 1] || avgCPA;
 
@@ -37,31 +55,34 @@ const Forecasting = ({ data, onForecastComplete }) => {
 
     let previousForecastedCPA = lastCPA;
 
-    return Array.from({ length: parseInt(forecastDays) }, (_, index) => {
-      const day = index + 1;
-      const isActual = index < data.length;
-      
-      let forecastedCPA;
-      if (isActual) {
-        forecastedCPA = null; // Set to null for actual data points
-      } else {
-        const daysSinceLastActual = day - data.length;
-        const growthFactor = Math.pow(1 + (growthRate / 100), daysSinceLastActual);
-        const rawForecast = lastCPA * growthFactor;
-        const seasonalForecast = applySeasonality(rawForecast, day);
-        forecastedCPA = applySmoothing(previousForecastedCPA, seasonalForecast);
-      }
+    const actualData = filteredData.map((item, index) => ({
+      day: index + 1,
+      date: item.date,
+      actualCPA: item.CPA,
+      forecastedCPA: null,
+      LTV: item.LTV,
+    }));
 
-      previousForecastedCPA = forecastedCPA || previousForecastedCPA;
+    const forecastData = Array.from({ length: parseInt(forecastDays) }, (_, index) => {
+      const day = filteredData.length + index + 1;
+      const growthFactor = Math.pow(1 + (growthRate / 100), index + 1);
+      const rawForecast = lastCPA * growthFactor;
+      const seasonalForecast = applySeasonality(rawForecast, day);
+      const forecastedCPA = applySmoothing(previousForecastedCPA, seasonalForecast);
+
+      previousForecastedCPA = forecastedCPA;
 
       return {
         day,
-        actualCPA: isActual ? data[index].CPA : null,
+        date: new Date(endDate.getTime() + (index + 1) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        actualCPA: null,
         forecastedCPA: forecastedCPA,
-        LTV: isActual ? data[index].LTV : null,
+        LTV: null,
       };
     });
-  }, [data, forecastDays, growthRate, seasonality, smoothing]);
+
+    return [...actualData, ...forecastData];
+  }, [filteredData, forecastDays, growthRate, seasonality, smoothing, endDate]);
 
   useEffect(() => {
     console.log('Forecast data:', runForecast);
@@ -76,6 +97,29 @@ const Forecasting = ({ data, onForecastComplete }) => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <Label htmlFor="start-date">Start Date</Label>
+            <DatePicker
+              id="start-date"
+              selected={startDate}
+              onChange={setStartDate}
+              selectsStart
+              startDate={startDate}
+              endDate={endDate}
+            />
+          </div>
+          <div>
+            <Label htmlFor="end-date">End Date</Label>
+            <DatePicker
+              id="end-date"
+              selected={endDate}
+              onChange={setEndDate}
+              selectsEnd
+              startDate={startDate}
+              endDate={endDate}
+              minDate={startDate}
+            />
+          </div>
           <div>
             <Label htmlFor="forecast-days">Forecast Days</Label>
             <Input
@@ -128,14 +172,14 @@ const Forecasting = ({ data, onForecastComplete }) => {
         <ResponsiveContainer width="100%" height={400}>
           <LineChart data={runForecast}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" />
+            <XAxis dataKey="date" />
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line type="monotone" dataKey="actualCPA" stroke="#8884d8" name="Actual CPA" />
-            <Line type="monotone" dataKey="forecastedCPA" stroke="#82ca9d" name="Forecasted CPA" />
+            <Line type="monotone" dataKey="actualCPA" stroke="#8884d8" name="Actual CPA" strokeWidth={2} dot={{ r: 1 }} />
+            <Line type="monotone" dataKey="forecastedCPA" stroke="#82ca9d" name="Forecasted CPA" strokeWidth={2} dot={{ r: 1 }} />
             {runForecast.some(item => item.LTV !== null) && (
-              <Line type="monotone" dataKey="LTV" stroke="#ffc658" name="LTV" />
+              <Line type="monotone" dataKey="LTV" stroke="#ffc658" name="LTV" strokeWidth={2} dot={{ r: 1 }} />
             )}
           </LineChart>
         </ResponsiveContainer>
