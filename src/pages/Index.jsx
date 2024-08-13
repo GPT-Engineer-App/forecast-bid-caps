@@ -29,7 +29,12 @@ const Index = () => {
         </CardHeader>
         <CardContent>
           {step === 1 && <DataUpload onDataUploaded={handleDataUploaded} />}
-          {step === 2 && <Forecasting data={uploadedData} onForecastComplete={handleForecastComplete} />}
+          {step === 2 && (
+            <Forecasting
+              data={uploadedData}
+              onForecastComplete={handleForecastComplete}
+            />
+          )}
           {step === 3 && <CostBidCapCalculator forecastData={forecastData} />}
           
           <div className="mt-6 flex justify-between">
