@@ -15,6 +15,18 @@ const DataUpload = ({ onDataUploaded }) => {
     setError(null);
   };
 
+  const validateCSV = (text) => {
+    const rows = text.split('\n').map(row => row.split(','));
+    if (rows.length < 2) {
+      throw new Error("The CSV file must contain at least a header row and one data row.");
+    }
+    const headers = rows[0];
+    if (!headers.includes('CPA') || !headers.includes('LTV')) {
+      throw new Error("The CSV file must include 'CPA' and 'LTV' columns.");
+    }
+    return { headers, rows };
+  };
+
   const handleUpload = async () => {
     if (!file) {
       setError("Please select a file to upload.");
@@ -22,22 +34,19 @@ const DataUpload = ({ onDataUploaded }) => {
     }
 
     try {
-      // Here you would typically send the file to a server
-      // For this example, we'll simulate parsing the CSV file
       const text = await file.text();
-      const rows = text.split('\n').map(row => row.split(','));
-      const headers = rows[0];
+      const { headers, rows } = validateCSV(text);
       const data = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((header, index) => {
-          obj[header.trim()] = row[index].trim();
+          obj[header.trim()] = row[index] ? row[index].trim() : '';
         });
         return obj;
       });
 
       onDataUploaded(data);
     } catch (err) {
-      setError("Error processing file. Please ensure it's a valid CSV.");
+      setError(`Error processing file: ${err.message}`);
     }
   };
 
@@ -57,6 +66,14 @@ const DataUpload = ({ onDataUploaded }) => {
       <Button onClick={handleUpload} disabled={!file}>
         <Upload className="mr-2 h-4 w-4" /> Upload and Process Data
       </Button>
+      <div className="text-sm text-gray-600">
+        <p>The CSV file should contain at least the following columns:</p>
+        <ul className="list-disc list-inside">
+          <li>CPA (Cost Per Acquisition)</li>
+          <li>LTV (Lifetime Value)</li>
+        </ul>
+        <p>Ensure your CSV file has a header row with these column names.</p>
+      </div>
     </div>
   );
 };
