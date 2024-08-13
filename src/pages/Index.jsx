@@ -17,7 +17,7 @@ const Index = () => {
 
   const handleForecastComplete = (forecast) => {
     setForecastData(forecast);
-    setStep(3);
+    // Remove automatic step progression
   };
 
   return (
