@@ -7,11 +7,19 @@ const Forecasting = ({ data, onForecastComplete }) => {
 
   useEffect(() => {
     if (data) {
+      // Calculate average CPA excluding null values
+      const validCPAs = data.filter(item => item.CPA !== null);
+      const avgCPA = validCPAs.length > 0
+        ? validCPAs.reduce((sum, item) => sum + item.CPA, 0) / validCPAs.length
+        : 0;
+
       // Simulate forecasting based on the uploaded data
       const simulatedForecast = data.map((item, index) => ({
         day: index + 1,
-        actualCPA: parseFloat(item.CPA) || 0,
-        forecastedCPA: (parseFloat(item.CPA) || 0) * (1 + Math.random() * 0.2 - 0.1), // Random variation
+        actualCPA: item.CPA !== null ? item.CPA : null,
+        forecastedCPA: item.CPA !== null
+          ? item.CPA * (1 + Math.random() * 0.2 - 0.1) // Random variation for existing CPAs
+          : avgCPA * (1 + Math.random() * 0.2 - 0.1), // Use average CPA for null values
         LTV: item.LTV ? parseFloat(item.LTV) : null,
       }));
       setForecast(simulatedForecast);

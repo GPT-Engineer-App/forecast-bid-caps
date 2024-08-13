@@ -39,7 +39,8 @@ const DataUpload = ({ onDataUploaded }) => {
       const data = rows.slice(1).map(row => {
         const obj = {};
         headers.forEach((header, index) => {
-          obj[header.trim()] = row[index] ? row[index].trim() : '';
+          const value = row[index] ? row[index].trim() : '';
+          obj[header.trim()] = header.trim() === 'CPA' ? (value === '' ? null : parseFloat(value)) : value;
         });
         return obj;
       });
