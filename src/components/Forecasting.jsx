@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
 
 const Forecasting = ({ data, onForecastComplete }) => {
   const [forecast, setForecast] = useState(null);
