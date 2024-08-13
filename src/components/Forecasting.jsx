@@ -43,15 +43,16 @@ const Forecasting = ({ data, onForecastComplete }) => {
       
       let forecastedCPA;
       if (isActual) {
-        forecastedCPA = data[index].CPA;
+        forecastedCPA = null; // Set to null for actual data points
       } else {
-        const growthFactor = Math.pow(1 + (growthRate / 100), day - data.length);
+        const daysSinceLastActual = day - data.length;
+        const growthFactor = Math.pow(1 + (growthRate / 100), daysSinceLastActual);
         const rawForecast = lastCPA * growthFactor;
         const seasonalForecast = applySeasonality(rawForecast, day);
         forecastedCPA = applySmoothing(previousForecastedCPA, seasonalForecast);
       }
 
-      previousForecastedCPA = forecastedCPA;
+      previousForecastedCPA = forecastedCPA || previousForecastedCPA;
 
       return {
         day,
@@ -63,8 +64,10 @@ const Forecasting = ({ data, onForecastComplete }) => {
   }, [data, forecastDays, growthRate, seasonality, smoothing]);
 
   useEffect(() => {
+    console.log('Forecast data:', runForecast);
+    console.log('Forecast parameters:', { forecastDays, growthRate, seasonality, smoothing });
     onForecastComplete(runForecast);
-  }, [runForecast, onForecastComplete]);
+  }, [runForecast, onForecastComplete, forecastDays, growthRate, seasonality, smoothing]);
 
   return (
     <Card className="space-y-6">
