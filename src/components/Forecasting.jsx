@@ -12,7 +12,7 @@ const Forecasting = ({ data, onForecastComplete }) => {
         day: index + 1,
         actualCPA: parseFloat(item.CPA) || 0,
         forecastedCPA: (parseFloat(item.CPA) || 0) * (1 + Math.random() * 0.2 - 0.1), // Random variation
-        LTV: parseFloat(item.LTV) || 0,
+        LTV: item.LTV ? parseFloat(item.LTV) : null,
       }));
       setForecast(simulatedForecast);
     }
@@ -38,7 +38,9 @@ const Forecasting = ({ data, onForecastComplete }) => {
           <Legend />
           <Line type="monotone" dataKey="actualCPA" stroke="#8884d8" name="Actual CPA" />
           <Line type="monotone" dataKey="forecastedCPA" stroke="#82ca9d" name="Forecasted CPA" />
-          <Line type="monotone" dataKey="LTV" stroke="#ffc658" name="LTV" />
+          {forecast.some(item => item.LTV !== null) && (
+            <Line type="monotone" dataKey="LTV" stroke="#ffc658" name="LTV" />
+          )}
         </LineChart>
       </ResponsiveContainer>
       <Button onClick={handleCompleteForecast}>Complete Forecast</Button>

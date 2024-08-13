@@ -21,8 +21,8 @@ const DataUpload = ({ onDataUploaded }) => {
       throw new Error("The CSV file must contain at least a header row and one data row.");
     }
     const headers = rows[0];
-    if (!headers.includes('CPA') || !headers.includes('LTV')) {
-      throw new Error("The CSV file must include 'CPA' and 'LTV' columns.");
+    if (!headers.includes('CPA')) {
+      throw new Error("The CSV file must include a 'CPA' column.");
     }
     return { headers, rows };
   };
@@ -67,11 +67,11 @@ const DataUpload = ({ onDataUploaded }) => {
         <Upload className="mr-2 h-4 w-4" /> Upload and Process Data
       </Button>
       <div className="text-sm text-gray-600">
-        <p>The CSV file should contain at least the following columns:</p>
+        <p>The CSV file should contain at least the following column:</p>
         <ul className="list-disc list-inside">
           <li>CPA (Cost Per Acquisition)</li>
-          <li>LTV (Lifetime Value)</li>
         </ul>
+        <p>LTV (Lifetime Value) is optional but recommended if available.</p>
         <p>Ensure your CSV file has a header row with these column names.</p>
       </div>
     </div>

@@ -12,10 +12,17 @@ const CostBidCapCalculator = ({ forecastData }) => {
   useEffect(() => {
     if (forecastData) {
       const avgCPA = forecastData.reduce((sum, day) => sum + day.forecastedCPA, 0) / forecastData.length;
-      const avgLTV = forecastData.reduce((sum, day) => sum + day.LTV, 0) / forecastData.length;
+      const validLTVs = forecastData.filter(day => day.LTV !== null);
+      const avgLTV = validLTVs.length > 0
+        ? validLTVs.reduce((sum, day) => sum + day.LTV, 0) / validLTVs.length
+        : null;
       
-      const calculatedRoas = avgLTV / avgCPA;
-      setRoas(calculatedRoas);
+      if (avgLTV !== null) {
+        const calculatedRoas = avgLTV / avgCPA;
+        setRoas(calculatedRoas);
+      } else {
+        setRoas(null);
+      }
 
       // Set initial cost cap and bid cap based on forecasted data
       setCostCap(avgCPA * 1.1); // 10% higher than average CPA
@@ -60,10 +67,12 @@ const CostBidCapCalculator = ({ forecastData }) => {
               />
             </div>
           </div>
-          <div className="mt-4">
-            <Label>Calculated ROAS</Label>
-            <p className="text-2xl font-bold">{roas.toFixed(2)}</p>
-          </div>
+          {roas !== null && (
+            <div className="mt-4">
+              <Label>Calculated ROAS</Label>
+              <p className="text-2xl font-bold">{roas.toFixed(2)}</p>
+            </div>
+          )}
           <Button onClick={handleCalculate} className="mt-4">Recalculate Caps</Button>
         </CardContent>
       </Card>
